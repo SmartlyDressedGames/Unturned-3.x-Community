@@ -120,12 +120,18 @@ namespace SDG.Unturned
 					asset = config.assetBundle.LoadAsset<T>(formattedPath);
 					if (asset != null)
 					{
-#if !DEDICATED_SERVER
 						if (asset is GameObject gameObject)
 						{
+#if !DEDICATED_SERVER
 							Bundle.FixupGameObjectAudio(gameObject);
-						}
 #endif // !DEDICATED_SERVER
+
+							if (!StaticUnityEventPrevention.Validate(gameObject))
+							{
+								UnturnedLog.warn("Canceling load asset '{0}' from master bundle '{1}' because it failed UnityEvent checks", formattedPath, name);
+								asset = null;
+							}
+						}
 					}
 					else if (logWarnings)
 					{
