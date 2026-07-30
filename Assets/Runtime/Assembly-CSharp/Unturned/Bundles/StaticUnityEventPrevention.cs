@@ -23,6 +23,12 @@ namespace SDG.Unturned
 
 			foreach (MonoBehaviour component in components)
 			{
+				if (component == null)
+				{
+					// Can be null if component's script is missing.
+					continue;
+				}
+
 				System.Type componentType = component.GetType();
 				TypeInfo componentInfo = GetTypeInfo(componentType);
 
@@ -40,10 +46,11 @@ namespace SDG.Unturned
 					for (int index = 0; index < unityEvent.GetPersistentEventCount(); ++index)
 					{
 						Object target = unityEvent.GetPersistentTarget(index);
-						if (target == null)
+						string method = unityEvent.GetPersistentMethodName(index);
+						if (target == null && !string.IsNullOrEmpty(method))
 						{
 							badComponent = true;
-							UnturnedLog.warn($"Found call to static method in {component.GetSceneHierarchyPath()} {componentType} {field.Name}, deleting component");
+							UnturnedLog.warn($"Found call to method \"{method}\" without target in {component.GetSceneHierarchyPath()} {componentType} {field.Name}, deleting component (may be attempting to call a static method, or target is unassigned)");
 							goto AfterLoop;
 						}
 					}
@@ -92,6 +99,7 @@ namespace SDG.Unturned
 				info.unityEventFields = tempFields.ToArray();
 			}
 
+			cachedTypeInfo.Add(type, info);
 			return info;
 		}
 
