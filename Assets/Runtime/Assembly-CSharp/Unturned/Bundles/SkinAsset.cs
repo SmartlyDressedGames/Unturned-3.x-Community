@@ -63,6 +63,12 @@ namespace SDG.Unturned
 
 		public List<Mesh> overrideMeshes;
 
+		/// <summary>
+		/// Same as ItemAsset.animations.
+		/// Necessary to fix incompatibility between classic canned beans skin and newer eating animations.
+		/// </summary>
+		public AnimationClip[] overrideAnimations;
+
 		public bool hasStatTrackerTransformOverride;
 		public Vector3 statTrackerPosition;
 		public Quaternion statTrackerRotation;
@@ -215,6 +221,37 @@ namespace SDG.Unturned
 					else
 					{
 						Assets.reportError("missing Override_Mesh_" + overrideMeshIndex);
+					}
+				}
+
+				if (p.data.ParseBool("Is_Legacy_Canned_Beans"))
+				{
+					GameObject animationsPrefab = p.bundle.load<GameObject>("Animations");
+					Animation animation = animationsPrefab.GetComponent<Animation>();
+
+					List<AnimationClip> tempAnimations = new List<AnimationClip>();
+
+					bool hasNullClips = false;
+					foreach (AnimationState state in animation)
+					{
+						AnimationClip clip = state.clip;
+						if (clip == null)
+						{
+							hasNullClips = true;
+							continue;
+						}
+
+						tempAnimations.Add(clip);
+					}
+
+					if (hasNullClips)
+					{
+						Assets.ReportError(this, "has invalid animation clip references");
+					}
+
+					if (tempAnimations.Count > 0)
+					{
+						overrideAnimations = tempAnimations.ToArray();
 					}
 				}
 			}

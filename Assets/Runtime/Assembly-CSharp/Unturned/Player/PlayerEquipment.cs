@@ -1338,6 +1338,8 @@ namespace SDG.Unturned
 			thirdEventComponent = null;
 			characterEventComponent = null;
 
+			AnimationClip[] oldAnims = useableSkin?.overrideAnimations ?? asset?.animations;
+
 			skinRagdollEffect = ERagdollEffect.None;
 			useableSkin = null;
 
@@ -1368,11 +1370,11 @@ namespace SDG.Unturned
 			tempCharacterMaterial = null;
 			characterMythic = null;
 
-			if (asset != null && asset.animations != null && asset.animations.Length > 0)
+			if (oldAnims != null && oldAnims.Length > 0)
 			{
-				for (int index = 0; index < asset.animations.Length; index++)
+				for (int index = 0; index < oldAnims.Length; index++)
 				{
-					player.animator.removeAnimation(asset.animations[index]);
+					player.animator.removeAnimation(oldAnims[index]);
 				}
 			}
 
@@ -1432,6 +1434,11 @@ namespace SDG.Unturned
 				}
 
 				GameObject prefab = asset.equipablePrefab != null ? asset.equipablePrefab : asset.item;
+				if (useableSkin?.overrideAnimations?.Length > 0)
+				{
+					// Hack for classic canned beans skin. (Equipable prefab has incompatible interior details.)
+					prefab = asset.item;
+				}
 
 				if (channel.IsLocalPlayer)
 				{
@@ -1602,11 +1609,12 @@ namespace SDG.Unturned
 					thirdMythic.IsMythicalEffectEnabled = player.clothing.isSkinned && player.clothing.isMythic;
 				}
 
-				if (asset.animations != null && asset.animations.Length > 0)
+				AnimationClip[] anims = useableSkin?.overrideAnimations ?? asset?.animations;
+				if (anims != null && anims.Length > 0)
 				{
-					for (int index = 0; index < asset.animations.Length; index++)
+					for (int index = 0; index < anims.Length; index++)
 					{
-						player.animator.AddEquippedItemAnimation(asset.animations[index], _firstModel, _thirdModel, _characterModel);
+						player.animator.AddEquippedItemAnimation(anims[index], _firstModel, _thirdModel, _characterModel);
 					}
 				}
 

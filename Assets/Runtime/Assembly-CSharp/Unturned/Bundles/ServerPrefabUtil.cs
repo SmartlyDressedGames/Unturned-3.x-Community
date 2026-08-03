@@ -59,11 +59,7 @@ namespace SDG.Unturned
 
 			// Sort textmesh components which depend on meshrenderers to the front so that
 			// Unity does not complain when we remove them. Same for LODGroupAdditionalData vs LODGroup.
-			workingComponents.Sort((Component lhs, Component rhs) =>
-			{
-				// Nelson 2025-12-04: if adding more dependencies here please make sure the dependency is ALSO in the typesToRemove set. ;)
-				return (lhs is TMPro.TextMeshPro || lhs is TextMesh || lhs is LODGroupAdditionalData || lhs is EnableDopplerEffect || lhs is MusicAudioSource) ? -1 : 0;
-			});
+			workingComponents.Sort(CompareRemovedComponents);
 
 #if LOG_SERVER_PREFAB_CLEANUP
 			UnturnedLog.info($"{context.FriendlyNameWithFriendlyType} removing {workingComponents.Count} component(s) from {gameObject.name}");
@@ -81,6 +77,19 @@ namespace SDG.Unturned
 			}
 
 			workingComponents.Clear();
+		}
+
+		private static int CompareRemovedComponents(Component lhs, Component rhs)
+		{
+			if (lhs.GetType() == rhs.GetType())
+			{
+				// Avoid inconsistent ordering exception if object has multiple components of the
+				// same type. (public issue #5525)
+				return lhs.GetInstanceID().CompareTo(rhs.GetInstanceID());
+			}
+
+			// Nelson 2025-12-04: if adding more dependencies here please make sure the dependency is ALSO in the typesToRemove set. ;)
+			return (lhs is TMPro.TextMeshPro || lhs is TextMesh || lhs is LODGroupAdditionalData || lhs is EnableDopplerEffect || lhs is MusicAudioSource) ? -1 : 0;
 		}
 
 		private static List<Component> workingComponents = new List<Component>();

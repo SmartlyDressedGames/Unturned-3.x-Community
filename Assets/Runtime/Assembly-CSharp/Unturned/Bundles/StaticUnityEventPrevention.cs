@@ -35,8 +35,6 @@ namespace SDG.Unturned
 				if (componentInfo.unityEventFields == null)
 					continue;
 				
-				bool badComponent = false;
-
 				foreach (FieldInfo field in componentInfo.unityEventFields)
 				{
 					UnityEventBase unityEvent = field.GetValue(component) as UnityEventBase;
@@ -49,19 +47,15 @@ namespace SDG.Unturned
 						string method = unityEvent.GetPersistentMethodName(index);
 						if (target == null && !string.IsNullOrEmpty(method))
 						{
-							badComponent = true;
-							UnturnedLog.warn($"Found call to method \"{method}\" without target in {component.GetSceneHierarchyPath()} {componentType} {field.Name}, deleting component (may be attempting to call a static method, or target is unassigned)");
-							goto AfterLoop;
+							// We can only log a helpful message if we have some context of which object this is.
+							if (Assets.shouldValidateAssets && (Assets.currentAsset != null || Assets.currentMasterBundle != null))
+							{
+								UnturnedLog.warn($"Found call to method \"{method}\" without target in {component.GetSceneHierarchyPath()} {componentType} {field.Name} (Asset: {Assets.currentAsset?.FriendlyNameWithFriendlyType} Bundle: {Assets.currentMasterBundle?.assetBundleName}), deactivating (may be attempting to call a static method, or target is unassigned)");
+							}
+							unityEvent.SetPersistentListenerState(index, UnityEventCallState.Off);
+							result = false;
 						}
 					}
-				}
-
-				AfterLoop:
-
-				if (badComponent)
-				{
-					Object.DestroyImmediate(component, /*allowDestroyingAssets*/ true);
-					result = false;
 				}
 			}
 

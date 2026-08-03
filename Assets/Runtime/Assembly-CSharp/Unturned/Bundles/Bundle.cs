@@ -125,15 +125,9 @@ namespace SDG.Unturned
 		}
 #endif // !DEDICATED_SERVER
 
-		protected virtual void processLoadedGameObject(ref GameObject gameObject)
+		protected virtual void processLoadedGameObject(GameObject gameObject)
 		{
-			if (!StaticUnityEventPrevention.Validate(gameObject))
-			{
-				// Prevent load caller from instantiating gameObject.
-				// Helps track down the offending asset, as it should log a missing game object error.
-				gameObject = null;
-				return;
-			}
+			StaticUnityEventPrevention.Validate(gameObject);
 
 #if !DEDICATED_SERVER
 			if (!Dedicator.IsDedicatedServer)
@@ -189,13 +183,11 @@ namespace SDG.Unturned
 			StandardShaderUtils.maybeFixupMaterial(material);
 		}
 
-		protected virtual void processLoadedObject<T>(ref T loadedObject) where T : Object
+		protected virtual void processLoadedObject<T>(T loadedObject) where T : Object
 		{
 			if (typeof(T) == typeof(GameObject))
 			{
-				GameObject loadedGameObject = loadedObject as GameObject;
-				processLoadedGameObject(ref loadedGameObject);
-				loadedObject = loadedGameObject as T;
+				processLoadedGameObject(loadedObject as GameObject);
 			}
 			else if (typeof(T) == typeof(AudioClip))
 			{
@@ -244,7 +236,7 @@ namespace SDG.Unturned
 			if (asset.Contains(name))
 			{
 				T file = asset.LoadAsset<T>(name);
-				processLoadedObject(ref file);
+				processLoadedObject(file);
 
 				return file;
 			}

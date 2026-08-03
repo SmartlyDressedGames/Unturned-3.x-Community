@@ -189,6 +189,8 @@ namespace SDG.Unturned
 			if (prefabTemplate == null)
 				yield break;
 
+			StaticUnityEventPrevention.Validate(prefabTemplate);
+
 			GameObject prefabInstance = Instantiate(prefabTemplate, Vector3.zero, Quaternion.identity);
 			prefabInstance.name = string.Format("{0}_Effect_{1}", asset.name, prefabTemplate.name);
 			ParticleSystem particleSystem = prefabInstance.GetComponentInChildren<ParticleSystem>();

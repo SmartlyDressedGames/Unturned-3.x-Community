@@ -377,6 +377,11 @@ namespace SDG.Unturned
 			return assetBundle.LoadAsset<T>(formattedPath);
 		}
 
+		/// <summary>
+		/// TODO: if adding additional calls, result should ideally wrap AssetBundleRequest so that
+		/// bundle.processLoadedObject runs before returning the result. Should be consolidated with
+		/// MasterBundleReference.LoadAssetAsync, too.
+		/// </summary>
 		public AssetBundleRequest LoadAssetAsync<T>(string name) where T : UnityEngine.Object
 		{
 			string formattedPath = formatAssetPath(name);

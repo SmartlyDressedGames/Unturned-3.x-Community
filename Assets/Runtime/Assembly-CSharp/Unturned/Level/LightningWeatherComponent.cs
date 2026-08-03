@@ -119,6 +119,8 @@ namespace SDG.Unturned
 				GameObject effectPrefab = request.asset as GameObject;
 				if (effectPrefab != null)
 				{
+					StaticUnityEventPrevention.Validate(effectPrefab);
+
 					effectInstance = Instantiate(effectPrefab);
 					effectInstance.SetActive(false);
 					lineRenderer = effectInstance.GetComponent<LineRenderer>();

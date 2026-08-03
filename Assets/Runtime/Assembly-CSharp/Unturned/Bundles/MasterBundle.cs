@@ -105,7 +105,7 @@ namespace SDG.Unturned
 #if WITH_ASSET_CONSOLIDATION
 					AssetConsolidation.OnLoadingPath(assetPath + extension);
 #endif
-					processLoadedObject(ref asset);
+					processLoadedObject(asset);
 					return asset;
 				}
 			}
