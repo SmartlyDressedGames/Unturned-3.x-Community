@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 
 namespace SDG.Unturned
 {
@@ -30,6 +31,17 @@ namespace SDG.Unturned
 				}
 
 				System.Type componentType = component.GetType();
+				if (typeof(EventTrigger).IsAssignableFrom(componentType))
+				{
+					EventTrigger eventTrigger = component as EventTrigger;
+					if (eventTrigger != null)
+					{
+						bool wasSafe = ValidateEventTrigger(eventTrigger);
+						result &= wasSafe;
+						continue;
+					}
+				}
+
 				TypeInfo componentInfo = GetTypeInfo(componentType);
 
 				if (componentInfo.unityEventFields == null)
@@ -59,6 +71,34 @@ namespace SDG.Unturned
 				}
 			}
 
+			return result;
+		}
+
+		private static bool ValidateEventTrigger(EventTrigger eventTrigger)
+		{
+			bool result = true;
+			foreach (EventTrigger.Entry entry in eventTrigger.triggers)
+			{
+				UnityEventBase unityEvent = entry.callback;
+				if (unityEvent == null)
+					continue;
+
+				for (int index = 0; index < unityEvent.GetPersistentEventCount(); ++index)
+				{
+					Object target = unityEvent.GetPersistentTarget(index);
+					string method = unityEvent.GetPersistentMethodName(index);
+					if (target == null && !string.IsNullOrEmpty(method))
+					{
+						// We can only log a helpful message if we have some context of which object this is.
+						if (Assets.shouldValidateAssets && (Assets.currentAsset != null || Assets.currentMasterBundle != null))
+						{
+							UnturnedLog.warn($"Found call to method \"{method}\" without target in {eventTrigger.GetSceneHierarchyPath()} EventTrigger {entry.eventID} (Asset: {Assets.currentAsset?.FriendlyNameWithFriendlyType} Bundle: {Assets.currentMasterBundle?.assetBundleName}), deactivating (may be attempting to call a static method, or target is unassigned)");
+						}
+						unityEvent.SetPersistentListenerState(index, UnityEventCallState.Off);
+						result = false;
+					}
+				}
+			}
 			return result;
 		}
 
