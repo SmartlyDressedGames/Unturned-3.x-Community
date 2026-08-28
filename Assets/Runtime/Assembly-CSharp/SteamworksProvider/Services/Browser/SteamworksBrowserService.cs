@@ -13,7 +13,7 @@ namespace SDG.SteamworksProvider.Services.Browser
 
 		public void open(string url)
 		{
-			SDG.Unturned.Provider.openURL(url);// SteamFriends.ActivateGameOverlayToWebPage(url);
+			SDG.Unturned.WebUtils.OpenURL(url);// SteamFriends.ActivateGameOverlayToWebPage(url);
 		}
 	}
 }

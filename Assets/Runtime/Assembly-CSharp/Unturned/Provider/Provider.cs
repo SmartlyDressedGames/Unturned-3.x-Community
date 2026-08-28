@@ -5524,24 +5524,9 @@ namespace SDG.Unturned
 			}
 		}
 
-		/// <summary>
-		/// Open URL in the steam overlay, or if disabled use the default browser instead.
-		/// Warning: any third party url should be checked by WebUtils.ParseThirdPartyUrl.
-		/// </summary>
+		[System.Obsolete("Please use WebUtils.OpenURL instead.")]
 		public static void openURL(string url)
-		{
-			// Previously game code would only open the steam overlay and show an error if disabled,
-			// so the most straightforward option was to report that the URL can be opened and route
-			// those requests through here instead.
-			if (SteamUtils.IsOverlayEnabled())
-			{
-				SteamFriends.ActivateGameOverlayToWebPage(url);
-			}
-			else
-			{
-				System.Diagnostics.Process.Start(url);
-			}
-		}
+		{ }
 
 		/// <summary>
 		/// Steam's favorites list requires that we know the server's IPv4 address and port,

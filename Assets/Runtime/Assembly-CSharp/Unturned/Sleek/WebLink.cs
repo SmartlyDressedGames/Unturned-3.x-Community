@@ -17,7 +17,7 @@ namespace SDG.Unturned
 			string parsedUrl;
 			if (WebUtils.ParseThirdPartyUrl(url, out parsedUrl))
 			{
-				Provider.openURL(parsedUrl);
+				WebUtils.OpenURL(parsedUrl);
 			}
 			else
 			{

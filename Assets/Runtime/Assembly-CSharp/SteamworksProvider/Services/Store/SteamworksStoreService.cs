@@ -24,7 +24,7 @@ namespace SDG.SteamworksProvider.Services.Store
 			else
 			{
 				// Ideally not hard-coded, but if overlay is disabled we have no choice.
-				SDG.Unturned.Provider.openURL("https://store.steampowered.com/app/" + appID.m_AppId);
+				SDG.Unturned.WebUtils.OpenURL("https://store.steampowered.com/app/" + appID.m_AppId);
 			}
 		}
 

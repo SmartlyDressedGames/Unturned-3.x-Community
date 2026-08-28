@@ -70,7 +70,7 @@ namespace SDG.SteamworksProvider.Services.Economy
 
 		public void open(ulong id)
 		{
-			SDG.Unturned.Provider.openURL("https://steamcommunity.com/profiles/" + SteamUser.GetSteamID() + "/inventory/?sellOnLoad=1#" + SteamUtils.GetAppID() + "_2_" + id);
+			SDG.Unturned.WebUtils.OpenURL("https://steamcommunity.com/profiles/" + SteamUser.GetSteamID() + "/inventory/?sellOnLoad=1#" + SteamUtils.GetAppID() + "_2_" + id);
 		}
 
 		private SteamworksEconomyRequestHandle findSteamworksEconomyRequestHandles(SteamInventoryResult_t steamInventoryResult)

@@ -68,7 +68,7 @@ namespace SDG.Unturned
 			string parsedLink;
 			if (WebUtils.ParseThirdPartyUrl(songAsset.linkURL, out parsedLink))
 			{
-				Provider.openURL(parsedLink);
+				WebUtils.OpenURL(parsedLink);
 			}
 			else
 			{

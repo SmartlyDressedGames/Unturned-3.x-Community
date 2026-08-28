@@ -76,7 +76,7 @@ namespace SDG.Unturned
 			string parsedUrl;
 			if (WebUtils.ParseThirdPartyUrl(_url, out parsedUrl, useLinkFiltering: useLinkFiltering))
 			{
-				Provider.openURL(parsedUrl);
+				WebUtils.OpenURL(parsedUrl);
 			}
 			else
 			{

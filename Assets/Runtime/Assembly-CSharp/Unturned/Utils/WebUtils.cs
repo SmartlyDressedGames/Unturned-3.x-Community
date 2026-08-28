@@ -4,6 +4,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 using System;
 using UnityEngine.Networking;
+using Steamworks;
 
 namespace SDG.Unturned
 {
@@ -81,6 +82,34 @@ namespace SDG.Unturned
 		internal static bool CanParseThirdPartyUrl(string uriString, bool autoPrefix = true, bool useLinkFiltering = true)
 		{
 			return ParseThirdPartyUrl(uriString, out string unusedResult, autoPrefix, useLinkFiltering);
+		}
+
+		/// <summary>
+		/// Open URL in the Steam overlay, or if disabled use the default browser instead.
+		/// </summary>
+		public static void OpenURL(string url)
+		{
+			// 2026-08-28: pre-existing code already passes third-party URLs through
+			// WebUtils.ParseThirdPartyUrl, but to be safe we're going to enforce it in here as
+			// well. In practice we never used non-HTTP/HTTPS URLs (e.g., steam://) anyway.
+			string webUrl;
+			if (!ParseThirdPartyUrl(url, out webUrl))
+			{
+				UnturnedLog.error($"Ignoring call to WebUtils.OpenURL, malicious URL? {url}");
+				return;
+			}
+
+			// Previously game code would only open the steam overlay and show an error if disabled,
+			// so the most straightforward option was to report that the URL can be opened and route
+			// those requests through here instead.
+			if (SteamUtils.IsOverlayEnabled())
+			{
+				SteamFriends.ActivateGameOverlayToWebPage(webUrl);
+			}
+			else
+			{
+				System.Diagnostics.Process.Start(webUrl);
+			}
 		}
 	}
 }

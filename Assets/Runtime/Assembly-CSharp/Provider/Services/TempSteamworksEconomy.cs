@@ -265,7 +265,7 @@ namespace SDG.Provider
 
 		public void open(ulong id)
 		{
-			SDG.Unturned.Provider.openURL("https://steamcommunity.com/profiles/" + SteamUser.GetSteamID() + "/inventory/?sellOnLoad=1#" + SteamUtils.GetAppID() + "_2_" + id);
+			SDG.Unturned.WebUtils.OpenURL("https://steamcommunity.com/profiles/" + SteamUser.GetSteamID() + "/inventory/?sellOnLoad=1#" + SteamUtils.GetAppID() + "_2_" + id);
 		}
 
 		// old code:

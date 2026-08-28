@@ -13,7 +13,7 @@ namespace SDG.SteamworksProvider.Services.Workshop
 
 		public void open(Steamworks.PublishedFileId_t id)
 		{
-			SDG.Unturned.Provider.openURL("https://steamcommunity.com/sharedfiles/filedetails/?id=" + id.m_PublishedFileId);
+			SDG.Unturned.WebUtils.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=" + id.m_PublishedFileId);
 		}
 	}
 }

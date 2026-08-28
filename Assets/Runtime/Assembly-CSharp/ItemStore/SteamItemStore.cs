@@ -46,7 +46,7 @@ namespace SDG.Unturned
 			}
 
 			// Uses the Steam overlay if available, otherwise default system web browser.
-			Provider.openURL("https://store.steampowered.com/itemstore/" + Provider.APP_ID + "/detail/" + itemdefid);
+			WebUtils.OpenURL("https://store.steampowered.com/itemstore/" + Provider.APP_ID + "/detail/" + itemdefid);
 		}
 
 		public override void ViewNewItems()
@@ -70,7 +70,7 @@ namespace SDG.Unturned
 			}
 
 			// Uses the Steam overlay if available, otherwise default system web browser.
-			Provider.openURL("https://store.steampowered.com/itemstore/" + Provider.APP_ID + "/browse/?filter=New");
+			WebUtils.OpenURL("https://store.steampowered.com/itemstore/" + Provider.APP_ID + "/browse/?filter=New");
 		}
 
 		public override void ViewStore()
@@ -94,7 +94,7 @@ namespace SDG.Unturned
 			}
 
 			// Uses the Steam overlay if available, otherwise default system web browser.
-			Provider.openURL("https://store.steampowered.com/itemstore/" + Provider.APP_ID);
+			WebUtils.OpenURL("https://store.steampowered.com/itemstore/" + Provider.APP_ID);
 		}
 
 		public override void RequestPrices()
