@@ -53,17 +53,19 @@ namespace SDG.Unturned
 					if (unityEvent == null)
 						continue;
 
+					object persistentCallGroup = m_PersistentCalls.GetValue(unityEvent);
+					Debug.Assert(persistentCallGroup != null);
+
 					for (int index = 0; index < unityEvent.GetPersistentEventCount(); ++index)
 					{
-						Object target = unityEvent.GetPersistentTarget(index);
-						string method = unityEvent.GetPersistentMethodName(index);
-						if (target == null && !string.IsNullOrEmpty(method))
+						if (!ValidateUnityEvent(unityEvent, persistentCallGroup, index, out string reason))
 						{
 							// We can only log a helpful message if we have some context of which object this is.
-							if (Assets.shouldValidateAssets && (Assets.currentAsset != null || Assets.currentMasterBundle != null))
+							if (!string.IsNullOrEmpty(reason) && Assets.shouldValidateAssets && (Assets.currentAsset != null || Assets.currentMasterBundle != null))
 							{
-								UnturnedLog.warn($"Found call to method \"{method}\" without target in {component.GetSceneHierarchyPath()} {componentType} {field.Name} (Asset: {Assets.currentAsset?.FriendlyNameWithFriendlyType} Bundle: {Assets.currentMasterBundle?.assetBundleName}), deactivating (may be attempting to call a static method, or target is unassigned)");
+								UnturnedLog.warn($"Deactivating UnityEvent {component.GetSceneHierarchyPath()} {componentType} {field.Name} Reason: {reason} (Asset: {Assets.currentAsset?.FriendlyNameWithFriendlyType} Bundle: {Assets.currentMasterBundle?.assetBundleName})");
 							}
+
 							unityEvent.SetPersistentListenerState(index, UnityEventCallState.Off);
 							result = false;
 						}
@@ -83,23 +85,109 @@ namespace SDG.Unturned
 				if (unityEvent == null)
 					continue;
 
+				object persistentCallGroup = m_PersistentCalls.GetValue(unityEvent);
+				Debug.Assert(persistentCallGroup != null);
+
 				for (int index = 0; index < unityEvent.GetPersistentEventCount(); ++index)
 				{
-					Object target = unityEvent.GetPersistentTarget(index);
-					string method = unityEvent.GetPersistentMethodName(index);
-					if (target == null && !string.IsNullOrEmpty(method))
+					if (!ValidateUnityEvent(unityEvent, persistentCallGroup, index, out string reason))
 					{
 						// We can only log a helpful message if we have some context of which object this is.
-						if (Assets.shouldValidateAssets && (Assets.currentAsset != null || Assets.currentMasterBundle != null))
+						if (!string.IsNullOrEmpty(reason) && Assets.shouldValidateAssets && (Assets.currentAsset != null || Assets.currentMasterBundle != null))
 						{
-							UnturnedLog.warn($"Found call to method \"{method}\" without target in {eventTrigger.GetSceneHierarchyPath()} EventTrigger {entry.eventID} (Asset: {Assets.currentAsset?.FriendlyNameWithFriendlyType} Bundle: {Assets.currentMasterBundle?.assetBundleName}), deactivating (may be attempting to call a static method, or target is unassigned)");
+							UnturnedLog.warn($"Deactivating UnityEvent {eventTrigger.GetSceneHierarchyPath()} EventTrigger {entry.eventID} Reason: {reason} (Asset: {Assets.currentAsset?.FriendlyNameWithFriendlyType} Bundle: {Assets.currentMasterBundle?.assetBundleName})");
 						}
+
 						unityEvent.SetPersistentListenerState(index, UnityEventCallState.Off);
 						result = false;
 					}
 				}
 			}
 			return result;
+		}
+
+		private static bool IsTypeAllowed(System.Type type)
+		{
+			return typeof(Component).IsAssignableFrom(type)
+				|| type == typeof(Transform)
+				|| type == typeof(GameObject)
+				|| type == typeof(Material);
+		}
+
+		private static bool ValidateUnityEvent(UnityEventBase unityEvent, object persistentCallGroup, int index, out string reason)
+		{
+			try
+			{
+				Object target = unityEvent.GetPersistentTarget(index);
+				if (target == null)
+				{
+					reason = "null target object";
+					return false;
+				}
+
+				string methodName = unityEvent.GetPersistentMethodName(index);
+				if (string.IsNullOrEmpty(methodName))
+				{
+					reason = "empty method name";
+					return false;
+				}
+
+				System.Type targetActualType = target.GetType();
+				if (!IsTypeAllowed(targetActualType))
+				{
+					// Avoid somehow PersistentCall.targetAssemblyTypeName resolving unexpected type.
+					reason = $"target type {targetActualType} is not allowed (if valid, please open an issue)";
+					return false;
+				}
+
+				oneArgument[0] = index;
+				object persistentCall = GetListener.Invoke(persistentCallGroup, oneArgument);
+				if (persistentCall == null)
+				{
+					reason = "null persistent call (shouldn't happen?)";
+					return false;
+				}
+
+				// targetTypeName CAN be empty if target object is assigned
+				string targetTypeName = m_TargetAssemblyTypeName.GetValue(persistentCall) as string;
+				if (!string.IsNullOrEmpty(targetTypeName))
+				{
+					System.Type serializedTargetType = System.Type.GetType(targetTypeName, /*throwOnError*/ false);
+					if (serializedTargetType == null)
+					{
+						reason = $"unable to resolve target type \"{targetTypeName}\"";
+						return false;
+					}
+
+					if (!IsTypeAllowed(serializedTargetType))
+					{
+						reason = $"serialized target type {serializedTargetType} is not allowed (if valid, please open an issue)";
+						return false;
+					}
+				}
+
+				oneArgument[0] = persistentCall;
+				MethodInfo targetMethod = FindMethod.Invoke(unityEvent, oneArgument) as MethodInfo;
+				if (targetMethod == null)
+				{
+					reason = $"unable to find target method \"{methodName}\"";
+					return false;
+				}
+
+				if (targetMethod.IsStatic)
+				{
+					reason = $"target method is static ({targetMethod})";
+					return false;
+				}
+
+				reason = null;
+				return true;
+			}
+			catch
+			{
+				reason = "threw an exception";
+				return false;
+			}
 		}
 
 		private static List<MonoBehaviour> components = new List<MonoBehaviour>();
@@ -138,5 +226,27 @@ namespace SDG.Unturned
 		}
 
 		private static List<FieldInfo> tempFields = new List<FieldInfo>();
+		private static FieldInfo m_PersistentCalls;
+		private static MethodInfo GetListener;
+		private static MethodInfo FindMethod;
+		private static object[] oneArgument;
+		private static FieldInfo m_TargetAssemblyTypeName;
+
+		static StaticUnityEventPrevention()
+		{
+			m_PersistentCalls = typeof(UnityEventBase).GetField("m_PersistentCalls", BindingFlags.Instance | BindingFlags.NonPublic);
+			Debug.Assert(m_PersistentCalls != null, "found m_PersistentCalls");
+			System.Type persistentCallGroupType = System.Type.GetType("UnityEngine.Events.PersistentCallGroup, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null", /*throwOnError*/ true);
+			Debug.Assert(persistentCallGroupType != null, "found persistentCallGroupType");
+			GetListener = persistentCallGroupType.GetMethod("GetListener", new System.Type[] { typeof(int) });
+			Debug.Assert(GetListener != null, "found GetListener");
+			oneArgument = new object[1];
+			System.Type persistentCallType = System.Type.GetType("UnityEngine.Events.PersistentCall, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null");
+			Debug.Assert(persistentCallType != null, "found persistentCallType");
+			m_TargetAssemblyTypeName = persistentCallType.GetField("m_TargetAssemblyTypeName", BindingFlags.Instance | BindingFlags.NonPublic);
+			Debug.Assert(m_TargetAssemblyTypeName != null, "found m_TargetAssemblyTypeName");
+			FindMethod = typeof(UnityEventBase).GetMethod("FindMethod", BindingFlags.Instance | BindingFlags.NonPublic, /*binder*/ null, new System.Type[] { persistentCallType }, /*modifiers*/ null);
+			Debug.Assert(FindMethod != null, "found FindMethod");
+		}
 	}
 }
