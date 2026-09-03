@@ -207,14 +207,25 @@ namespace SDG.Unturned
 
 			info = new TypeInfo();
 			tempFields.Clear();
-			foreach (FieldInfo field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+
+			System.Type searchType = type;
+			do
 			{
-				// Some classes (e.g., uGUI Button) subclass UnityEvent.
-				if (typeof(UnityEventBase).IsAssignableFrom(field.FieldType))
+				// Need to search up hierarchy to catch inherited private events.
+				// For example, Image inherits MaskableGraphic.m_OnCullStateChanged which isn't
+				// normally exposed to users but can be configured with the debug inspector.
+				foreach (FieldInfo field in searchType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
 				{
-					tempFields.Add(field);
+					// Some classes (e.g., uGUI Button) subclass UnityEvent.
+					if (typeof(UnityEventBase).IsAssignableFrom(field.FieldType))
+					{
+						tempFields.Add(field);
+					}
 				}
+
+				searchType = searchType.BaseType;
 			}
+			while (searchType != null);
 
 			if (tempFields.Count > 0)
 			{
